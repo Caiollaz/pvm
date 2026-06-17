@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# pvm — PHP Version Manager (Docker-backed).
+# Run multiple PHP versions through Docker, no PHP installed on the host.
+# https://github.com/YOUR_GITHUB_USER/pvm
+
+set -euo pipefail
+
+# Locate source modules relative to this script (works in repo and installed).
+_PVM_SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_PVM_ROOT="$(dirname "$_PVM_SELF")"
+
+# shellcheck source=src/config.sh
+. "$_PVM_ROOT/src/config.sh"
+# shellcheck source=src/utils.sh
+. "$_PVM_ROOT/src/utils.sh"
+# shellcheck source=src/docker.sh
+. "$_PVM_ROOT/src/docker.sh"
+# shellcheck source=src/versions.sh
+. "$_PVM_ROOT/src/versions.sh"
+# shellcheck source=src/doctor.sh
+. "$_PVM_ROOT/src/doctor.sh"
+
+pvm_usage() {
+  cat <<EOF
+${PVM_C_BLU}pvm${PVM_C_OFF} — PHP Version Manager (Docker-backed) v$PVM_VERSION
+
+${PVM_C_YEL}Usage:${PVM_C_OFF}
+  pvm install <version>      Pull a PHP version image (e.g. 8.1 8.2 8.3 8.4)
+  pvm uninstall <version>    Remove a PHP version image
+  pvm list                   List installed versions (* = active)
+  pvm available              List versions available to install
+  pvm use [<version>]        Select active version (no arg → read $PVM_RC_FILE)
+  pvm current                Show the active version
+  pvm doctor                 Diagnose the environment
+  pvm version                Show pvm's version
+  pvm help                   Show this help
+
+${PVM_C_YEL}Wrappers (on your PATH after install):${PVM_C_OFF}
+  php ...        composer ...
+
+${PVM_C_YEL}Version resolution order:${PVM_C_OFF}
+  1. \$PVM_PHP_VERSION   2. nearest $PVM_RC_FILE   3. global ($PVM_VERSION_FILE)
+
+${PVM_C_YEL}Examples:${PVM_C_OFF}
+  pvm install 8.3
+  pvm use 8.3
+  php -v
+  composer install
+  echo "8.2" > $PVM_RC_FILE   # per-project pin
+EOF
+}
+
+main() {
+  local cmd="${1:-help}"
+  [ $# -gt 0 ] && shift || true
+  case "$cmd" in
+    install)              pvm_cmd_install "$@" ;;
+    uninstall|remove|rm)  pvm_cmd_uninstall "$@" ;;
+    list|ls)              pvm_cmd_list "$@" ;;
+    available|avail)      pvm_cmd_available "$@" ;;
+    use)                  pvm_cmd_use "$@" ;;
+    current)              pvm_cmd_current "$@" ;;
+    doctor)               pvm_cmd_doctor "$@" ;;
+    version|--version|-v) printf 'pvm %s\n' "$PVM_VERSION" ;;
+    help|--help|-h)       pvm_usage ;;
+    *)                    pvm_err "Unknown command: $cmd"; pvm_usage; exit 1 ;;
+  esac
+}
+
+main "$@"

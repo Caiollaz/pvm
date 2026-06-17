@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# php — pvm wrapper. Runs PHP inside the active version's Docker container,
+# so `php`, `php artisan ...`, `phpunit`, `pest` behave like a native install.
+
+set -euo pipefail
+
+_PVM_SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_PVM_ROOT="$(dirname "$_PVM_SELF")"
+
+# shellcheck source=src/config.sh
+. "$_PVM_ROOT/src/config.sh"
+# shellcheck source=src/utils.sh
+. "$_PVM_ROOT/src/utils.sh"
+# shellcheck source=src/versions.sh
+. "$_PVM_ROOT/src/versions.sh"
+# shellcheck source=src/docker.sh
+. "$_PVM_ROOT/src/docker.sh"
+
+pvm_exec_php "$@"
