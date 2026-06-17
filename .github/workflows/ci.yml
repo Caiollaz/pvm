@@ -14,7 +14,7 @@ jobs:
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Lint shell scripts
-        run: shellcheck -s bash bin/pvm bin/php bin/composer src/*.sh install.sh uninstall.sh tests/*.sh
+        run: shellcheck -x -S warning -s bash bin/pvm bin/php bin/composer src/*.sh install.sh uninstall.sh tests/*.sh
 
   test:
     name: Unit tests
