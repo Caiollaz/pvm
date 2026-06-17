@@ -14,6 +14,13 @@ say()  { printf '%spvm-uninstall:%s %s\n' "$_blu" "$_off" "$*"; }
 ok()   { printf '%spvm-uninstall:%s %s\n' "$_grn" "$_off" "$*"; }
 warn() { printf '%spvm-uninstall:%s %s\n' "$_yel" "$_off" "$*" >&2; }
 
+uninstall_lang_is_pt() {
+  case "${PVM_LANG:-pt}" in
+    en|en_US|en-US|english|English) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 # Remove the "# pvm" marker line and the PATH line that follows it.
 strip_rc() {
   local rc="$1"
@@ -27,14 +34,14 @@ strip_rc() {
     { print }
   ' "$rc" > "$tmp"
   mv "$tmp" "$rc"
-  ok "Cleaned $rc"
+  uninstall_lang_is_pt && ok "$rc limpo" || ok "Cleaned $rc"
 }
 
 if [ -d "$PVM_DIR" ]; then
   rm -rf "$PVM_DIR"
-  ok "Removed $PVM_DIR"
+  uninstall_lang_is_pt && ok "$PVM_DIR removido" || ok "Removed $PVM_DIR"
 else
-  warn "$PVM_DIR not found."
+  uninstall_lang_is_pt && warn "$PVM_DIR nao encontrado." || warn "$PVM_DIR not found."
 fi
 
 for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
@@ -42,5 +49,5 @@ for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
 done
 
 echo
-say "pvm uninstalled. Restart your shell to refresh PATH."
-say "Pulled PHP images were left in place. List them with: docker images php"
+uninstall_lang_is_pt && say "pvm desinstalado. Reinicie o terminal para atualizar o PATH." || say "pvm uninstalled. Restart your shell to refresh PATH."
+uninstall_lang_is_pt && say "As imagens PHP baixadas ficaram no Docker. Liste com: docker images php" || say "Pulled PHP images were left in place. List them with: docker images php"

@@ -26,7 +26,8 @@ Free and open source under the [MIT License](LICENSE).
 - [Install PVM](#install-pvm)
 - [Your first commands (step by step)](#your-first-commands-step-by-step)
 - [Everyday use](#everyday-use)
-- [Pin a version per project (.pvmrc)](#pin-a-version-per-project-pvmrc)
+- [Project versions](#project-versions)
+- [Terminal language](#terminal-language)
 - [All commands](#all-commands)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
@@ -59,8 +60,15 @@ Docker is a free program that runs small, isolated environments on your
 computer. PVM uses it as the engine that actually runs PHP — so you install
 Docker once and never think about it again.
 
-1. Install Docker Desktop (Windows / macOS) or Docker Engine (Linux):
-   👉 https://docs.docker.com/get-docker/
+1. Install Docker Desktop (Windows / macOS) or Docker Engine (Linux).
+
+   On Windows, the easiest path is Chocolatey from an Administrator PowerShell:
+
+   ```powershell
+   choco install docker-desktop -y
+   ```
+
+   Other platforms: https://docs.docker.com/get-docker/
 2. Open it so it's running (on Windows/macOS you'll see the Docker whale icon).
 3. Check it works by opening your terminal and running:
 
@@ -80,17 +88,22 @@ Docker once and never think about it again.
 Copy this line, paste it into your terminal, and press Enter:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USER/pvm/main/install.sh | bash
+curl -fsSL https://github.com/Caiollaz/pvm/releases/latest/download/install.sh | bash
 ```
 
 Don't have `curl`? Use this instead:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/YOUR_GITHUB_USER/pvm/main/install.sh | bash
+wget -qO- https://github.com/Caiollaz/pvm/releases/latest/download/install.sh | bash
 ```
 
-When it finishes, **close your terminal and open a new one** (this lets your
-computer find the new `pvm` command). To check it worked:
+`curl` and `wget` only download and run the PVM installer. They do **not**
+install Docker; install Docker first using the steps above.
+
+The installer downloads the latest [release](https://github.com/Caiollaz/pvm/releases)
+and verifies it with a checksum. When it finishes, **close your terminal and
+open a new one** (this lets your computer find the new `pvm` command). To check
+it worked:
 
 ```bash
 pvm version
@@ -99,10 +112,18 @@ pvm version
 You should see something like `pvm 0.1.0`.
 
 <details>
-<summary>Prefer to install from the source code instead?</summary>
+<summary>Install a specific version, or from source?</summary>
+
+Pin a version:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USER/pvm
+PVM_VERSION=0.1.0 curl -fsSL https://github.com/Caiollaz/pvm/releases/latest/download/install.sh | bash
+```
+
+From a clone of the source code:
+
+```bash
+git clone https://github.com/Caiollaz/pvm
 cd pvm
 ./install.sh
 ```
@@ -171,34 +192,66 @@ pvm list
 8.3 *      ← the * marks the version you're using
 ```
 
-## Pin a version per project (.pvmrc)
+## Project versions
 
-Different projects often need different PHP versions. Put a small file named
-`.pvmrc` in a project folder with the version inside:
+Different projects often need different PHP versions. PVM checks the current
+folder and then walks up through parent folders, using the first version it
+finds in this order:
+
+1. `.pvmrc`
+2. `.php-version`
+3. `composer.json` `require.php`
+
+The most explicit option is a small `.pvmrc` file in your project folder:
 
 ```bash
 echo "8.2" > .pvmrc
 ```
 
 Now whenever you're in that folder (or any folder inside it), `php` and
-`composer` automatically use 8.2 — no need to run `pvm use` every time. This is
-the same idea as `.nvmrc` if you've used Node before.
+`composer` automatically use 8.2. The wrappers resolve the project version every
+time you run them, so changing directories is enough; no shell hook is needed.
+
+PVM can also read common PHP project files:
+
+```bash
+echo "8.2" > .php-version
+# or composer.json:
+# { "require": { "php": "^8.2" } }
+```
 
 ## All commands
 
 | Command | What it does |
 | --- | --- |
-| `pvm install <version>` | Download a PHP version (e.g. `pvm install 8.3`) |
+| `pvm install [<version>]` | Download a PHP version (no version → read project files) |
 | `pvm uninstall <version>` | Remove a PHP version |
 | `pvm list` | Show installed versions (`*` = the one in use) |
 | `pvm available` | Show versions you can install |
-| `pvm use [<version>]` | Choose the active version (no version → read `.pvmrc`) |
+| `pvm use [<version>]` | Choose the active version (no version → read project files) |
 | `pvm current` | Show which version is active |
 | `pvm doctor` | Check that everything is set up correctly |
+| `pvm language [pt\|en]` | Show or choose terminal message language |
 | `pvm version` | Show PVM's own version |
 | `pvm help` | Show help |
 
 A more detailed reference lives in [docs/commands.md](docs/commands.md).
+
+## Terminal language
+
+PVM can show terminal messages in Portuguese or English:
+
+```bash
+pvm language pt
+pvm language en
+```
+
+For one command only, use `PVM_LANG`:
+
+```bash
+PVM_LANG=en pvm doctor
+PVM_LANG=pt pvm install 8.3
+```
 
 ## Troubleshooting
 
@@ -279,7 +332,7 @@ builds on the roadmap).
 **Uninstall PVM completely:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USER/pvm/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Caiollaz/pvm/main/uninstall.sh | bash
 # or, from a clone:  ./uninstall.sh
 ```
 

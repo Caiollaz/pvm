@@ -2,7 +2,7 @@
 #
 # pvm — PHP Version Manager (Docker-backed).
 # Run multiple PHP versions through Docker, no PHP installed on the host.
-# https://github.com/YOUR_GITHUB_USER/pvm
+# https://github.com/Caiollaz/pvm
 
 set -euo pipefail
 
@@ -22,17 +22,55 @@ _PVM_ROOT="$(dirname "$_PVM_SELF")"
 . "$_PVM_ROOT/src/doctor.sh"
 
 pvm_usage() {
-  cat <<EOF
+  if pvm_lang_is_pt; then
+    cat <<EOF
+${PVM_C_BLU}pvm${PVM_C_OFF} — PHP Version Manager (Docker-backed) v$PVM_VERSION
+
+${PVM_C_YEL}Uso:${PVM_C_OFF}
+  pvm install [<version>]    Baixa uma versao do PHP (ex: 8.1 8.2 8.3 8.4)
+  pvm uninstall <version>    Remove uma versao do PHP
+  pvm list                   Lista versoes instaladas (* = ativa)
+  pvm available              Lista versoes disponiveis
+  pvm use [<version>]        Escolhe a versao ativa (sem arg -> le o projeto)
+  pvm current                Mostra a versao ativa
+  pvm doctor                 Verifica seu ambiente
+  pvm language [pt|en]       Mostra ou escolhe o idioma das mensagens
+  pvm version                Mostra a versao do pvm
+  pvm help                   Mostra esta ajuda
+
+${PVM_C_YEL}Comandos no PATH depois da instalacao:${PVM_C_OFF}
+  php ...        composer ...
+
+${PVM_C_YEL}Ordem para escolher a versao:${PVM_C_OFF}
+  1. \$PVM_PHP_VERSION
+  2. $PVM_RC_FILE, .php-version ou composer.json require.php mais proximo
+  3. global ($PVM_VERSION_FILE)
+
+${PVM_C_YEL}Docker:${PVM_C_OFF}
+  PVM usa Docker para rodar PHP. curl/wget instalam so o PVM, nao o Docker.
+  No Windows, instale o Docker Desktop pelo PowerShell como Administrador:
+    choco install docker-desktop -y
+
+${PVM_C_YEL}Exemplos:${PVM_C_OFF}
+  pvm install 8.3
+  pvm use 8.3
+  php -v
+  composer install
+  echo "8.2" > $PVM_RC_FILE   # versao por projeto
+EOF
+  else
+    cat <<EOF
 ${PVM_C_BLU}pvm${PVM_C_OFF} — PHP Version Manager (Docker-backed) v$PVM_VERSION
 
 ${PVM_C_YEL}Usage:${PVM_C_OFF}
-  pvm install <version>      Pull a PHP version image (e.g. 8.1 8.2 8.3 8.4)
+  pvm install [<version>]    Pull a PHP version image (e.g. 8.1 8.2 8.3 8.4)
   pvm uninstall <version>    Remove a PHP version image
   pvm list                   List installed versions (* = active)
   pvm available              List versions available to install
-  pvm use [<version>]        Select active version (no arg → read $PVM_RC_FILE)
+  pvm use [<version>]        Select active version (no arg -> read project files)
   pvm current                Show the active version
   pvm doctor                 Diagnose the environment
+  pvm language [pt|en]       Show or set terminal message language
   pvm version                Show pvm's version
   pvm help                   Show this help
 
@@ -40,15 +78,24 @@ ${PVM_C_YEL}Wrappers (on your PATH after install):${PVM_C_OFF}
   php ...        composer ...
 
 ${PVM_C_YEL}Version resolution order:${PVM_C_OFF}
-  1. \$PVM_PHP_VERSION   2. nearest $PVM_RC_FILE   3. global ($PVM_VERSION_FILE)
+  1. \$PVM_PHP_VERSION
+  2. nearest $PVM_RC_FILE, .php-version, or composer.json require.php
+  3. global ($PVM_VERSION_FILE)
+
+${PVM_C_YEL}Docker:${PVM_C_OFF}
+  PVM uses Docker to run PHP. curl/wget install PVM only, not Docker.
+  On Windows, install Docker Desktop from an Administrator PowerShell:
+    choco install docker-desktop -y
 
 ${PVM_C_YEL}Examples:${PVM_C_OFF}
+  pvm language en
   pvm install 8.3
   pvm use 8.3
   php -v
   composer install
-  echo "8.2" > $PVM_RC_FILE   # per-project pin
+  echo "8.2" > $PVM_RC_FILE   # per-project version
 EOF
+  fi
 }
 
 main() {
@@ -62,9 +109,10 @@ main() {
     use)                  pvm_cmd_use "$@" ;;
     current)              pvm_cmd_current "$@" ;;
     doctor)               pvm_cmd_doctor "$@" ;;
+    language|lang)        pvm_cmd_language "$@" ;;
     version|--version|-v) printf 'pvm %s\n' "$PVM_VERSION" ;;
     help|--help|-h)       pvm_usage ;;
-    *)                    pvm_err "Unknown command: $cmd"; pvm_usage; exit 1 ;;
+    *)                    pvm_lang_is_pt && pvm_err "Comando desconhecido: $cmd" || pvm_err "Unknown command: $cmd"; pvm_usage; exit 1 ;;
   esac
 }
 

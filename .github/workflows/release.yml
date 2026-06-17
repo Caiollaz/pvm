@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version and validate tag
+        id: ver
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          ver="$(sed -n 's/^PVM_VERSION="\(.*\)"$/\1/p' src/config.sh)"
+          if [ -z "$ver" ]; then
+            echo "::error::Could not read PVM_VERSION from src/config.sh"
+            exit 1
+          fi
+          if [ "$tag" != "v$ver" ]; then
+            echo "::error::Tag ($tag) does not match PVM_VERSION (v$ver) in src/config.sh"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build release tarballs and checksums
+        run: |
+          set -euo pipefail
+          ver="${{ steps.ver.outputs.version }}"
+          stage="$(mktemp -d)/pvm"
+          mkdir -p "$stage"
+          cp -r bin src docs install.sh uninstall.sh LICENSE README.md "$stage"/
+          ( cd "$(dirname "$stage")" && tar czf "$GITHUB_WORKSPACE/pvm-${ver}.tar.gz" pvm )
+          cp "pvm-${ver}.tar.gz" pvm.tar.gz
+          sha256sum "pvm-${ver}.tar.gz" pvm.tar.gz install.sh > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --generate-notes \
+            "pvm-${{ steps.ver.outputs.version }}.tar.gz" \
+            "pvm.tar.gz" \
+            "install.sh" \
+            "SHA256SUMS"

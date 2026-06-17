@@ -20,6 +20,9 @@ PVM_CONFIG_DIR="$PVM_DIR/config"
 # File holding the active global version.
 PVM_VERSION_FILE="$PVM_CONFIG_DIR/version"
 
+# File holding the preferred terminal language (pt or en).
+PVM_LANG_FILE="$PVM_CONFIG_DIR/lang"
+
 # Per-project version file (like .nvmrc).
 PVM_RC_FILE=".pvmrc"
 
