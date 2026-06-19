@@ -8,7 +8,7 @@
 _PVM_CONFIG_LOADED=1
 
 # pvm's own version.
-PVM_VERSION="0.1.0"
+PVM_VERSION="0.2.0"
 
 # Data directory (state lives here). Overridable for tests / custom installs.
 : "${PVM_DIR:=$HOME/.pvm}"
