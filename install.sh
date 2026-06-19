@@ -167,19 +167,38 @@ chmod +x "$PVM_DIR"/bin/pvm "$PVM_DIR"/bin/php "$PVM_DIR"/bin/composer
 PATH_LINE='export PATH="$HOME/.pvm/bin:$PATH"'
 MARKER='# pvm'
 
+# Write the PATH line to $rc, creating the file if it doesn't exist yet.
 add_to_rc() {
   local rc="$1"
-  [ -e "$rc" ] || return 0
   grep -qF "$MARKER" "$rc" 2>/dev/null && return 0
   { printf '\n%s\n%s\n' "$MARKER" "$PATH_LINE"; } >> "$rc"
   ok "Updated $rc"
+}
+
+# rc file for the user's current login shell — created even when absent so the
+# pvm command is always wired up, not just when a shell rc already exists.
+default_rc_for_shell() {
+  case "$(basename "${SHELL:-}")" in
+    zsh)  printf '%s' "$HOME/.zshrc" ;;
+    bash) printf '%s' "$HOME/.bashrc" ;;
+    *)    printf '%s' "$HOME/.profile" ;;
+  esac
 }
 
 updated=0
 for rc in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
   if [ -e "$rc" ]; then add_to_rc "$rc"; updated=1; fi
 done
-[ "$updated" -eq 1 ] || warn "No shell rc found. Add manually:  $PATH_LINE"
+
+# No rc file existed: create the one matching the current shell.
+if [ "$updated" -eq 0 ]; then
+  rc="$(default_rc_for_shell)"
+  add_to_rc "$rc"
+  updated=1
+fi
+
+# Make pvm available in the current session too, so it works without a restart.
+export PATH="$HOME/.pvm/bin:$PATH"
 
 # 5. Final instructions.
 echo
